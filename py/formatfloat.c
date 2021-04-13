@@ -90,9 +90,9 @@ static inline int fp_isless1(float x) {
 #define FPROUND_TO_ONE 0.999999999995
 #define FPDECEXP 256
 #define FPMIN_BUF_SIZE 7 // +9e+199
-#define fp_signbit(x) signbit(x)
-#define fp_isnan(x) isnan(x)
-#define fp_isinf(x) isinf(x)
+#define fp_signbit(x) ((0 < x) - (x < 0))
+#define fp_isnan(x) __builtin_isnan(x)
+#define fp_isinf(x) __builtin_isinf(x)
 #define fp_iszero(x) (x == 0)
 #define fp_isless1(x) (x < 1.0)
 

@@ -26,6 +26,28 @@
 
 #include "py/builtin.h"
 #include "py/runtime.h"
+#include "lib/libm/libm.h"
+#include "lib/libm_dbl/libm.h"
+#include "lib/libm_dbl/expm1.c"
+#include "lib/libm_dbl/log1p.c"
+#include "lib/libm_dbl/asinh.c"
+#include "lib/libm_dbl/acosh.c"
+#include "lib/libm_dbl/atanh.c"
+#include "lib/libm_dbl/erf.c"
+#include "lib/libm_dbl/tgamma.c"
+#include "lib/libm_dbl/lgamma.c"
+#include "lib/libm_dbl/copysign.c"
+
+
+#ifndef isnan
+#define isnan(x) __builtin_isnan(x)
+#endif
+#ifndef isinf
+#define isinf(x) __builtin_isinf(x)
+#endif
+#ifndef isfinite
+#define isfinite(x) __builtin_isfinite(x)
+#endif
 
 #if MICROPY_PY_BUILTINS_FLOAT && MICROPY_PY_MATH
 

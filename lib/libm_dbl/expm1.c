@@ -104,7 +104,12 @@
  * to produce the hexadecimal values shown.
  */
 
-#include "libm.h"
+#include "lib/libm_dbl/libm.h"
+#ifndef isnan
+#define isnan(x) __builtin_isnan(x)
+#endif
+typedef float float_t;
+typedef double double_t;
 
 static const double
 o_threshold = 7.09782712893383973096e+02, /* 0x40862E42, 0xFEFA39EF */
@@ -150,7 +155,7 @@ double expm1(double x)
 				k = -1;
 			}
 		} else {
-			k  = invln2*x + (sign ? -0.5 : 0.5);
+			k  = (int)(invln2*x + (sign ? -0.5 : 0.5));
 			t  = k;
 			hi = x - t*ln2_hi;  /* t*ln2_hi is exact here */
 			lo = t*ln2_lo;

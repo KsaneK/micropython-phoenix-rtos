@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -46,6 +47,10 @@
 #include "py/builtin.h"
 #include "py/mphal.h"
 #include "py/mpthread.h"
+
+#ifndef MSG_DONTROUTE
+#define MSG_DONTROUTE   0x04
+#endif
 
 /*
   The idea of this module is to implement reasonable minimum of

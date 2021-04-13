@@ -38,6 +38,7 @@
 #if MICROPY_PY_BUILTINS_FLOAT
 #include <math.h>
 #endif
+#define nearbyint(x) round(x)
 
 #if MICROPY_PY_IO
 extern struct _mp_dummy_t mp_sys_stdout_obj; // type is irrelevant, just need pointer

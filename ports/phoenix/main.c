@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <signal.h>
+#include <limits.h>
 
 #include "py/compile.h"
 #include "py/runtime.h"
@@ -51,6 +52,191 @@
 #include "extmod/vfs_posix.h"
 #include "genhdr/mpversion.h"
 #include "input.h"
+
+size_t
+strlcpy(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+	/* Copy as many bytes as will fit */
+	if (n != 0) {
+		while (--n != 0) {
+			if ((*d++ = *s++) == '\0')
+				break;
+		}
+  }
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';		/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
+	return(s - src - 1);	/* count does not include NUL */
+}
+
+size_t
+strlcat(char * restrict dst, const char * restrict src, size_t maxlen) {
+    const size_t srclen = strlen(src);
+    const size_t dstlen = strnlen(dst, maxlen);
+    if (dstlen == maxlen) return maxlen+srclen;
+    if (srclen < maxlen-dstlen) {
+        memcpy(dst+dstlen, src, srclen+1);
+    } else {
+        memcpy(dst+dstlen, src, maxlen-1);
+        dst[dstlen+maxlen-1] = '\0';
+    }
+    return dstlen + srclen;
+}
+
+
+char *
+realpath(const char *path, char resolved[260])
+{
+	struct stat sb;
+	char *p, *q, *s;
+	size_t left_len, resolved_len;
+	unsigned symlinks;
+	int serrno, slen;
+	char left[260], next_token[260], symlink[260];
+
+	serrno = errno;
+	symlinks = 0;
+	if (path[0] == '/') {
+		resolved[0] = '/';
+		resolved[1] = '\0';
+		if (path[1] == '\0')
+			return (resolved);
+		resolved_len = 1;
+		left_len = strlcpy(left, path + 1, sizeof(left));
+	} else {
+		if (getcwd(resolved, 260) == NULL) {
+			strlcpy(resolved, ".", 260);
+			return (NULL);
+		}
+		resolved_len = strlen(resolved);
+		left_len = strlcpy(left, path, sizeof(left));
+	}
+	if (left_len >= sizeof(left) || resolved_len >= 260) {
+		errno = ENAMETOOLONG;
+		return (NULL);
+	}
+
+	/*
+	 * Iterate over path components in `left'.
+	 */
+	while (left_len != 0) {
+		/*
+		 * Extract the next path component and adjust `left'
+		 * and its length.
+		 */
+		p = strchr(left, '/');
+		s = p ? p : left + left_len;
+		if (s - left >= (long int)sizeof(next_token)) {
+			errno = ENAMETOOLONG;
+			return (NULL);
+		}
+		memcpy(next_token, left, s - left);
+		next_token[s - left] = '\0';
+		left_len -= s - left;
+		if (p != NULL)
+			memmove(left, s + 1, left_len + 1);
+		if (resolved[resolved_len - 1] != '/') {
+			if (resolved_len + 1 >= 260) {
+				errno = ENAMETOOLONG;
+				return (NULL);
+			}
+			resolved[resolved_len++] = '/';
+			resolved[resolved_len] = '\0';
+		}
+		if (next_token[0] == '\0')
+			continue;
+		else if (strcmp(next_token, ".") == 0)
+			continue;
+		else if (strcmp(next_token, "..") == 0) {
+			/*
+			 * Strip the last path component except when we have
+			 * single "/"
+			 */
+			if (resolved_len > 1) {
+				resolved[resolved_len - 1] = '\0';
+				q = strrchr(resolved, '/') + 1;
+				*q = '\0';
+				resolved_len = q - resolved;
+			}
+			continue;
+		}
+
+		/*
+		 * Append the next path component and lstat() it. If
+		 * lstat() fails we still can return successfully if
+		 * there are no more path components left.
+		 */
+		resolved_len = strlcat(resolved, next_token, 260);
+		if (resolved_len >= 260) {
+			errno = ENAMETOOLONG;
+			return (NULL);
+		}
+		if (lstat(resolved, &sb) != 0) {
+			if (errno == ENOENT && p == NULL) {
+				errno = serrno;
+				return (resolved);
+			}
+			return (NULL);
+		}
+		if (S_ISLNK(sb.st_mode)) {
+			if (symlinks++ > 8) {
+				errno = 40;
+				return (NULL);
+			}
+			slen = readlink(resolved, symlink, sizeof(symlink) - 1);
+			if (slen < 0)
+				return (NULL);
+			symlink[slen] = '\0';
+			if (symlink[0] == '/') {
+				resolved[1] = 0;
+				resolved_len = 1;
+			} else if (resolved_len > 1) {
+				/* Strip the last path component. */
+				resolved[resolved_len - 1] = '\0';
+				q = strrchr(resolved, '/') + 1;
+				*q = '\0';
+				resolved_len = q - resolved;
+			}
+
+			/*
+			 * If there are any path components left, then
+			 * append them to symlink. The result is placed
+			 * in `left'.
+			 */
+			if (p != NULL) {
+				if (symlink[slen - 1] != '/') {
+					if (slen + 1 >= (int)sizeof(symlink)) {
+						errno = ENAMETOOLONG;
+						return (NULL);
+					}
+					symlink[slen] = '/';
+					symlink[slen + 1] = 0;
+				}
+				left_len = strlcat(symlink, left, sizeof(left));
+				if (left_len >= sizeof(left)) {
+					errno = ENAMETOOLONG;
+					return (NULL);
+				}
+			}
+			left_len = strlcpy(left, symlink, sizeof(left));
+		}
+	}
+
+	/*
+	 * Remove trailing slash except when the resolved pathname
+	 * is a single "/".
+	 */
+	if (resolved_len > 1 && resolved[resolved_len - 1] == '/')
+		resolved[resolved_len - 1] = '\0';
+	return (resolved);
+}
 
 // Command line options, with their defaults
 STATIC bool compile_only = false;
@@ -643,7 +829,7 @@ MP_NOINLINE int main_(int argc, char **argv) {
                 return invalid_args();
             }
         } else {
-            char *pathbuf = malloc(PATH_MAX);
+            char *pathbuf = malloc(260);
             char *basedir = realpath(argv[a], pathbuf);
             if (basedir == NULL) {
                 mp_printf(&mp_stderr_print, "%s: can't open file '%s': [Errno %d] %s\n", argv[0], argv[a], errno, strerror(errno));

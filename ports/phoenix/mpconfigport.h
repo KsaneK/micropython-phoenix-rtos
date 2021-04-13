@@ -34,7 +34,7 @@
 // If we're building the minimal variant, ignore the rest of this file.
 #ifndef MICROPY_UNIX_MINIMAL
 
-#define MICROPY_ALLOC_PATH_MAX      (PATH_MAX)
+#define MICROPY_ALLOC_PATH_MAX      (260)
 #define MICROPY_PERSISTENT_CODE_LOAD (1)
 #if !defined(MICROPY_EMIT_X64) && defined(__x86_64__)
     #define MICROPY_EMIT_X64        (1)
@@ -137,9 +137,9 @@
 #define MICROPY_STACKLESS_STRICT    (0)
 #endif
 
-#define MICROPY_PY_OS_STATVFS       (1)
-#define MICROPY_PY_UTIME            (1)
-#define MICROPY_PY_UTIME_MP_HAL     (1)
+#define MICROPY_PY_OS_STATVFS       (0)
+#define MICROPY_PY_UTIME            (0)
+#define MICROPY_PY_UTIME_MP_HAL     (0)
 #define MICROPY_PY_UERRNO           (1)
 #define MICROPY_PY_UCTYPES          (1)
 #define MICROPY_PY_UZLIB            (1)
@@ -159,7 +159,7 @@
 #ifndef MICROPY_PY_USELECT_POSIX
 #define MICROPY_PY_USELECT_POSIX    (1)
 #endif
-#define MICROPY_PY_UWEBSOCKET       (1)
+#define MICROPY_PY_UWEBSOCKET       (0)
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_PY_MACHINE_PULSE    (1)
 #define MICROPY_MACHINE_MEM_GET_READ_ADDR   mod_machine_mem_get_addr
@@ -202,18 +202,12 @@ extern const struct _mp_obj_module_t mp_module_uselect;
 extern const struct _mp_obj_module_t mp_module_time;
 extern const struct _mp_obj_module_t mp_module_termios;
 extern const struct _mp_obj_module_t mp_module_socket;
-extern const struct _mp_obj_module_t mp_module_ffi;
 extern const struct _mp_obj_module_t mp_module_jni;
 
 #if MICROPY_PY_UOS_VFS
 #define MICROPY_PY_UOS_DEF { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_uos_vfs) },
 #else
 #define MICROPY_PY_UOS_DEF { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_os) },
-#endif
-#if MICROPY_PY_FFI
-#define MICROPY_PY_FFI_DEF { MP_ROM_QSTR(MP_QSTR_ffi), MP_ROM_PTR(&mp_module_ffi) },
-#else
-#define MICROPY_PY_FFI_DEF
 #endif
 #if MICROPY_PY_JNI
 #define MICROPY_PY_JNI_DEF { MP_ROM_QSTR(MP_QSTR_jni), MP_ROM_PTR(&mp_module_jni) },
@@ -242,7 +236,6 @@ extern const struct _mp_obj_module_t mp_module_jni;
 #endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
-    MICROPY_PY_FFI_DEF \
     MICROPY_PY_JNI_DEF \
     MICROPY_PY_UTIME_DEF \
     MICROPY_PY_SOCKET_DEF \
@@ -276,20 +269,20 @@ typedef long long mp_off_t;
 typedef long mp_off_t;
 #endif
 
-void mp_unix_alloc_exec(size_t min_size, void **ptr, size_t *size);
+// void mp_unix_alloc_exec(size_t min_size, void **ptr, size_t *size);
 void mp_unix_free_exec(void *ptr, size_t size);
 void mp_unix_mark_exec(void);
-#define MP_PLAT_ALLOC_EXEC(min_size, ptr, size) mp_unix_alloc_exec(min_size, ptr, size)
+// #define MP_PLAT_ALLOC_EXEC(min_size, ptr, size) mp_unix_alloc_exec(min_size, ptr, size)
 #define MP_PLAT_FREE_EXEC(ptr, size) mp_unix_free_exec(ptr, size)
 #ifndef MICROPY_FORCE_PLAT_ALLOC_EXEC
 // Use MP_PLAT_ALLOC_EXEC for any executable memory allocation, including for FFI
 // (overriding libffi own implementation)
-#define MICROPY_FORCE_PLAT_ALLOC_EXEC (1)
+// #define MICROPY_FORCE_PLAT_ALLOC_EXEC (1)
 #endif
 
 #ifdef __linux__
 // Can access physical memory using /dev/mem
-#define MICROPY_PLAT_DEV_MEM  (1)
+#define MICROPY_PLAT_DEV_MEM  (0)
 #endif
 
 // Assume that select() call, interrupted with a signal, and erroring
@@ -345,12 +338,12 @@ struct _mp_bluetooth_nimble_malloc_t;
 // Other libc's don't define it, but proactively assume that dirent->d_type
 // is available on a modern *nix system.
 #ifndef _DIRENT_HAVE_D_TYPE
-#define _DIRENT_HAVE_D_TYPE (1)
+#define _DIRENT_HAVE_D_TYPE (0)
 #endif
 // This macro is not provided by glibc but we need it so ports that don't have
 // dirent->d_ino can disable the use of this field.
 #ifndef _DIRENT_HAVE_D_INO
-#define _DIRENT_HAVE_D_INO (1)
+#define _DIRENT_HAVE_D_INO (0)
 #endif
 
 #ifndef __APPLE__
@@ -371,6 +364,5 @@ struct _mp_bluetooth_nimble_malloc_t;
     } while (0);
 
 #include <sched.h>
-#define MICROPY_UNIX_MACHINE_IDLE sched_yield();
 
 #endif // MICROPY_UNIX_MINIMAL

@@ -36,6 +36,8 @@
 #include "py/objlist.h"
 #include "py/objexcept.h"
 
+#define nan(x) NAN
+
 // This file contains structures defining the state of the MicroPython
 // memory system, runtime and virtual machine.  The state is a global
 // variable, but in the future it is hoped that the state can become local.

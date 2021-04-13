@@ -259,9 +259,9 @@ STATIC mp_obj_t listdir_next(mp_obj_t self_in) {
     #ifdef DTTOIF
     t->items[1] = MP_OBJ_NEW_SMALL_INT(DTTOIF(dirent->d_type));
     #else
-    if (dirent->d_type == DT_DIR) {
+    if (dirent->d_type == 4) {
         t->items[1] = MP_OBJ_NEW_SMALL_INT(MP_S_IFDIR);
-    } else if (dirent->d_type == DT_REG) {
+    } else if (dirent->d_type == 8) {
         t->items[1] = MP_OBJ_NEW_SMALL_INT(MP_S_IFREG);
     } else {
         t->items[1] = MP_OBJ_NEW_SMALL_INT(dirent->d_type);

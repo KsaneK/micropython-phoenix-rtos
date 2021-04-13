@@ -22,7 +22,19 @@ Gamma(x)*Gamma(-x) = -pi/(x sin(pi x))
 
 most ideas and constants are from boost and python
 */
-#include "libm.h"
+#include "lib/libm_dbl/libm.h"
+#include "lib/libm_dbl/cos.c"
+#include "lib/libm_dbl/__sin.c"
+#include "lib/libm_dbl/__cos.c"
+#ifndef isinf
+#define isinf(x) __builtin_isinf(x)
+#endif
+#ifndef signbit
+#define signbit(x) ((0 < x) - (x < 0))
+#endif
+#ifndef isfinite
+#define isfinite(x) __builtin_isfinite(x)
+#endif
 
 static const double pi = 3.141592653589793238462643383279502884;
 
@@ -37,7 +49,7 @@ static double sinpi(double x)
 	x = 2 * (x - floor(x));
 
 	/* reduce x into [-.25,.25] */
-	n = 4 * x;
+	n = (int)(4 * x);
 	n = (n+1)/2;
 	x -= n * 0.5;
 
@@ -116,7 +128,7 @@ double tgamma(double x)
 	/* special cases */
 	if (ix >= 0x7ff00000)
 		/* tgamma(nan)=nan, tgamma(inf)=inf, tgamma(-inf)=nan with invalid */
-		return x + INFINITY;
+		return (double)(x + (double)INFINITY);
 	if (ix < (0x3ff-54)<<20)
 		/* |x| < 2^-54: tgamma(x) ~ 1/x, +-0 raises div-by-zero */
 		return 1/x;

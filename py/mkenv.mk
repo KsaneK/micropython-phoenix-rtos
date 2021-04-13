@@ -11,6 +11,7 @@ endif
 
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 TOP := $(patsubst %/py/mkenv.mk,%,$(THIS_MAKEFILE))
+DEBUG = 1
 
 # Turn on increased build verbosity by defining BUILD_VERBOSE in your main
 # Makefile or in your environment. You can also use V=1 on the make command
@@ -46,6 +47,7 @@ CAT = cat
 TOUCH = touch
 PYTHON = python3
 
+CROSS_COMPILE = i386-pc-phoenix-
 AS = $(CROSS_COMPILE)as
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++

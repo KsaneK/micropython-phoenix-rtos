@@ -36,6 +36,10 @@
 #include <math.h>
 #include "py/formatfloat.h"
 
+#ifndef isnan
+#define isnan(x) __builtin_isnan(x)
+#endif
+
 typedef struct _mp_obj_complex_t {
     mp_obj_base_t base;
     mp_float_t real;

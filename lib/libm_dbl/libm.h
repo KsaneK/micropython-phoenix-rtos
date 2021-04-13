@@ -17,10 +17,11 @@
 
 #define FLT_EVAL_METHOD 0
 
+#ifndef FORCE_EVAL
 #define FORCE_EVAL(x) do {                        \
 	if (sizeof(x) == sizeof(float)) {         \
 		volatile float __x;               \
-		__x = (x);                        \
+		__x = (float)(x);                        \
                 (void)__x;                        \
 	} else if (sizeof(x) == sizeof(double)) { \
 		volatile double __x;              \
@@ -32,6 +33,7 @@
                 (void)__x;                        \
 	}                                         \
 } while(0)
+#endif
 
 /* Get two 32 bit ints from a double.  */
 #define EXTRACT_WORDS(hi,lo,d)                    \
@@ -90,7 +92,8 @@ do {                                              \
 
 int __rem_pio2(double, double*);
 int __rem_pio2_large(double*, double*, int, int, int);
-double __sin(double, double, int);
-double __cos(double, double);
-double __tan(double, double, int);
+// double __sin(double, double, int);
+// double __cos(double, double);
+// double __tan(double, double, int);
 double __expo2(double);
+int __signbitd(double x);

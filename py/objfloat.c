@@ -31,10 +31,21 @@
 
 #include "py/parsenum.h"
 #include "py/runtime.h"
+#ifndef isinf
+#define isinf(x) __builtin_isinf(x)
+#endif
+#ifndef isnan
+#define isnan(x) __builtin_isnan(x)
+#endif
+#ifndef copysign
+#define copysign(x, y) y == 0.0 ? fabs(x) : fabs(x)*y/fabs(y)
+#endif
+#ifndef signbit
+#define signbit(x) ((0 < x) - (x < 0))
+#endif
 
 #if MICROPY_PY_BUILTINS_FLOAT
 
-#include <math.h>
 #include "py/formatfloat.h"
 
 #if MICROPY_OBJ_REPR != MICROPY_OBJ_REPR_C && MICROPY_OBJ_REPR != MICROPY_OBJ_REPR_D

@@ -31,7 +31,7 @@ UNAME_S := $(shell uname -s)
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-GIT_SUBMODULES += lib/axtls lib/berkeley-db-1.xx lib/libffi
+GIT_SUBMODULES += lib/axtls lib/berkeley-db-1.xx
 
 INC +=  -I.
 INC +=  -I$(TOP)
@@ -103,17 +103,9 @@ LDFLAGS_ARCH = -Wl,-Map=$@.map,--cref -Wl,--gc-sections
 endif
 LDFLAGS += $(LDFLAGS_MOD) $(LDFLAGS_ARCH) -lm $(LDFLAGS_EXTRA)
 
-# Flags to link with pthread library
-LIBPTHREAD = -lpthread
-
 ifeq ($(MICROPY_FORCE_32BIT),1)
 # Note: you may need to install i386 versions of dependency packages,
 # starting with linux-libc-dev:i386
-ifeq ($(MICROPY_PY_FFI),1)
-ifeq ($(UNAME_S),Linux)
-CFLAGS_MOD += -I/usr/include/i686-linux-gnu
-endif
-endif
 endif
 
 ifeq ($(MICROPY_USE_READLINE),1)
@@ -128,10 +120,6 @@ endif
 ifeq ($(MICROPY_PY_SOCKET),1)
 CFLAGS_MOD += -DMICROPY_PY_SOCKET=1
 SRC_MOD += modusocket.c
-endif
-ifeq ($(MICROPY_PY_THREAD),1)
-CFLAGS_MOD += -DMICROPY_PY_THREAD=1 -DMICROPY_PY_THREAD_GIL=0
-LDFLAGS_MOD += $(LIBPTHREAD)
 endif
 
 # If the variant enables it, enable modbluetooth.
@@ -189,29 +177,6 @@ endif
 
 endif
 
-ifeq ($(MICROPY_PY_FFI),1)
-
-ifeq ($(MICROPY_STANDALONE),1)
-LIBFFI_CFLAGS_MOD := -I$(shell ls -1d $(BUILD)/lib/libffi/out/lib/libffi-*/include)
- ifeq ($(MICROPY_FORCE_32BIT),1)
-  LIBFFI_LDFLAGS_MOD = $(BUILD)/lib/libffi/out/lib32/libffi.a
- else
-  LIBFFI_LDFLAGS_MOD = $(BUILD)/lib/libffi/out/lib/libffi.a
- endif
-else
-LIBFFI_CFLAGS_MOD := $(shell pkg-config --cflags libffi)
-LIBFFI_LDFLAGS_MOD := $(shell pkg-config --libs libffi)
-endif
-
-ifeq ($(UNAME_S),Linux)
-LIBFFI_LDFLAGS_MOD += -ldl
-endif
-
-CFLAGS_MOD += $(LIBFFI_CFLAGS_MOD) -DMICROPY_PY_FFI=1
-LDFLAGS_MOD += $(LIBFFI_LDFLAGS_MOD)
-SRC_MOD += modffi.c
-endif
-
 ifeq ($(MICROPY_PY_JNI),1)
 # Path for 64-bit OpenJDK, should be adjusted for other JDKs
 CFLAGS_MOD += -I/usr/lib/jvm/java-7-openjdk-amd64/include -DMICROPY_PY_JNI=1
@@ -223,7 +188,6 @@ SRC_C += \
 	main.c \
 	gccollect.c \
 	unix_mphal.c \
-	mpthreadport.c \
 	input.c \
 	modmachine.c \
 	modos.c \
@@ -299,7 +263,6 @@ test: $(PROG) $(TOP)/tests/run-tests.py
 test_full: $(PROG) $(TOP)/tests/run-tests.py
 	$(eval DIRNAME=ports/$(notdir $(CURDIR)))
 	cd $(TOP)/tests && MICROPY_MICROPYTHON=../$(DIRNAME)/$(PROG) ./run-tests.py
-	cd $(TOP)/tests && MICROPY_MICROPYTHON=../$(DIRNAME)/$(PROG) ./run-tests.py -d thread
 	cd $(TOP)/tests && MICROPY_MICROPYTHON=../$(DIRNAME)/$(PROG) ./run-tests.py --emit native
 	cd $(TOP)/tests && MICROPY_MICROPYTHON=../$(DIRNAME)/$(PROG) ./run-tests.py --via-mpy $(RUN_TESTS_MPY_CROSS_FLAGS) -d basics float micropython
 	cd $(TOP)/tests && MICROPY_MICROPYTHON=../$(DIRNAME)/$(PROG) ./run-tests.py --via-mpy $(RUN_TESTS_MPY_CROSS_FLAGS) --emit native -d basics float micropython
@@ -316,20 +279,6 @@ CROSS_COMPILE_HOST = --host=$(patsubst %-,%,$(CROSS_COMPILE))
 else
 CROSS_COMPILE_HOST =
 endif
-
-deplibs: libffi axtls
-
-libffi: $(BUILD)/lib/libffi/include/ffi.h
-
-$(TOP)/lib/libffi/configure: $(TOP)/lib/libffi/autogen.sh
-	cd $(TOP)/lib/libffi; ./autogen.sh
-
-# install-exec-recursive & install-data-am targets are used to avoid building
-# docs and depending on makeinfo
-$(BUILD)/lib/libffi/include/ffi.h: $(TOP)/lib/libffi/configure
-	mkdir -p $(BUILD)/lib/libffi; cd $(BUILD)/lib/libffi; \
-	$(abspath $(TOP))/lib/libffi/configure $(CROSS_COMPILE_HOST) --prefix=$$PWD/out --disable-structs CC="$(CC)" CXX="$(CXX)" LD="$(LD)" CFLAGS="-Os -fomit-frame-pointer -fstrict-aliasing -ffast-math -fno-exceptions"; \
-	$(MAKE) install-exec-recursive; $(MAKE) -C include install-data-am
 
 axtls: $(TOP)/lib/axtls/README
 

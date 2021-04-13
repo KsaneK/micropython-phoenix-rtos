@@ -21,10 +21,11 @@
 
 #define FLT_EVAL_METHOD 0
 
+#ifndef FORCE_EVAL
 #define FORCE_EVAL(x) do {                        \
 	if (sizeof(x) == sizeof(float)) {         \
 		volatile float __x;               \
-		__x = (x);                        \
+		__x = (float)(x);                        \
                 (void)__x;                        \
 	} else if (sizeof(x) == sizeof(double)) { \
 		volatile double __x;              \
@@ -36,6 +37,7 @@
                 (void)__x;                        \
 	}                                         \
 } while(0)
+#endif
 
 /* Get a 32 bit int from a float.  */
 #define GET_FLOAT_WORD(w,d)                       \

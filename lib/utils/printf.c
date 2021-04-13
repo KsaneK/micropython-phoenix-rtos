@@ -50,54 +50,54 @@ int DEBUG_printf(const char *fmt, ...) {
 #if MICROPY_USE_INTERNAL_PRINTF
 
 #undef putchar  // Some stdlibs have a #define for putchar
-int printf(const char *fmt, ...);
-int vprintf(const char *fmt, va_list ap);
-int putchar(int c);
-int puts(const char *s);
-int vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
-int snprintf(char *str, size_t size, const char *fmt, ...);
+// int printf(const char *fmt, ...);
+// int vprintf(const char *fmt, va_list ap);
+// int putchar(int c);
+// int puts(const char *s);
+// int vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
+// int snprintf(char *str, size_t size, const char *fmt, ...);
 
-int printf(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    int ret = mp_vprintf(&mp_plat_print, fmt, ap);
-    va_end(ap);
-    return ret;
-}
+// int printf(const char *fmt, ...) {
+//     va_list ap;
+//     va_start(ap, fmt);
+//     int ret = mp_vprintf(&mp_plat_print, fmt, ap);
+//     va_end(ap);
+//     return ret;
+// }
 
-int vprintf(const char *fmt, va_list ap) {
-    return mp_vprintf(&mp_plat_print, fmt, ap);
-}
+// int vprintf(const char *fmt, va_list ap) {
+//     return mp_vprintf(&mp_plat_print, fmt, ap);
+// }
 
 // need this because gcc optimises printf("%c", c) -> putchar(c), and printf("a") -> putchar('a')
-int putchar(int c) {
-    char chr = c;
-    mp_hal_stdout_tx_strn_cooked(&chr, 1);
-    return chr;
-}
+// int putchar(int c) {
+//     char chr = c;
+//     mp_hal_stdout_tx_strn_cooked(&chr, 1);
+//     return chr;
+// }
 
 // need this because gcc optimises printf("string\n") -> puts("string")
-int puts(const char *s) {
-    mp_hal_stdout_tx_strn_cooked(s, strlen(s));
-    char chr = '\n';
-    mp_hal_stdout_tx_strn_cooked(&chr, 1);
-    return 1;
-}
+// int puts(const char *s) {
+//     mp_hal_stdout_tx_strn_cooked(s, strlen(s));
+//     char chr = '\n';
+//     mp_hal_stdout_tx_strn_cooked(&chr, 1);
+//     return 1;
+// }
 
 typedef struct _strn_print_env_t {
     char *cur;
     size_t remain;
 } strn_print_env_t;
 
-STATIC void strn_print_strn(void *data, const char *str, size_t len) {
-    strn_print_env_t *strn_print_env = data;
-    if (len > strn_print_env->remain) {
-        len = strn_print_env->remain;
-    }
-    memcpy(strn_print_env->cur, str, len);
-    strn_print_env->cur += len;
-    strn_print_env->remain -= len;
-}
+// STATIC void strn_print_strn(void *data, const char *str, size_t len) {
+//     strn_print_env_t *strn_print_env = data;
+//     if (len > strn_print_env->remain) {
+//         len = strn_print_env->remain;
+//     }
+//     memcpy(strn_print_env->cur, str, len);
+//     strn_print_env->cur += len;
+//     strn_print_env->remain -= len;
+// }
 
 #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 9
 // uClibc requires this alias to be defined, or there may be link errors
@@ -107,27 +107,27 @@ STATIC void strn_print_strn(void *data, const char *str, size_t len) {
 int __GI_vsnprintf(char *str, size_t size, const char *fmt, va_list ap) __attribute__((weak, alias("vsnprintf")));
 #endif
 
-int vsnprintf(char *str, size_t size, const char *fmt, va_list ap) {
-    strn_print_env_t strn_print_env = {str, size};
-    mp_print_t print = {&strn_print_env, strn_print_strn};
-    int len = mp_vprintf(&print, fmt, ap);
-    // add terminating null byte
-    if (size > 0) {
-        if (strn_print_env.remain == 0) {
-            strn_print_env.cur[-1] = 0;
-        } else {
-            strn_print_env.cur[0] = 0;
-        }
-    }
-    return len;
-}
+// int vsnprintf(char *str, size_t size, const char *fmt, va_list ap) {
+//     strn_print_env_t strn_print_env = {str, size};
+//     mp_print_t print = {&strn_print_env, strn_print_strn};
+//     int len = mp_vprintf(&print, fmt, ap);
+//     // add terminating null byte
+//     if (size > 0) {
+//         if (strn_print_env.remain == 0) {
+//             strn_print_env.cur[-1] = 0;
+//         } else {
+//             strn_print_env.cur[0] = 0;
+//         }
+//     }
+//     return len;
+// }
 
-int snprintf(char *str, size_t size, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    int ret = vsnprintf(str, size, fmt, ap);
-    va_end(ap);
-    return ret;
-}
+// int snprintf(char *str, size_t size, const char *fmt, ...) {
+//     va_list ap;
+//     va_start(ap, fmt);
+//     int ret = vsnprintf(str, size, fmt, ap);
+//     va_end(ap);
+//     return ret;
+// }
 
 #endif // MICROPY_USE_INTERNAL_PRINTF
